@@ -1,0 +1,90 @@
+I have use claude Ai to help me with this assignement
+
+Me:
+what is a finance assistant app
+
+AI:
+A finance assistant app is a tool that helps you track and understand your money. It typically shows you where your money goes each month, helps you set and reach savings goals, gives advice on how to spend less in certain areas, and sometimes uses AI to answer your money-related questions. Think of it like a smart calculator that also gives you personalised advice.
+
+Me:
+can you connect this to my specific project, the user spends money on xbox gaming, gym, cinema at MCine Moka, and tea at Maison de Thé in Moka
+
+AI: 
+For your project specifically, the Smart Finance Assistant helps a young person who spends on Xbox games, gym membership, cinema at MCine Moka, and tea at Maison de Thé in Moka. It shows them a breakdown of their spending by category, lets them chat with an AI advisor called FinBot, retrieves financial tips through a knowledge base, and calculates how long it takes to reach a savings goal — all through a simple browser interface.
+
+Me: 
+what is csv and why do banks use it for transaction exports
+
+AI:
+CSV stands for Comma-Separated Values. It is a simple text file where each line is a row of data and each value is separated by a comma. Banks use it because the format works in Excel, Google Sheets, and Python without needing special software. When you export your transactions from online banking, the file usually looks like this:
+
+Date,Amount,Category,Description
+2026-03-01,$60.00,Gym,Monthly Gym Membership
+2026-03-02,$8.50,Tea & Café,Maison de Thé - Green Tea Moka
+2026-03-05,$69.99,Gaming,Xbox Game Pass Ultimate 3 Months
+2026-03-20,-$15.00,Refund,Xbox Store - Refund Cancelled DLC
+
+Each column is separated by a comma and each row is a separate transaction.
+
+Me:
+I'm building a Smart Finance Assistant for a young person who spends on Xbox gaming, gym, cinema at MCine Moka, and tea at Maison de Thé in Moka. Help me write the problem statement in plain English
+
+AI: 
+People often struggle to keep track of their spending when purchases are spread across different categories. A gym membership here, a game purchase there, a cinema outing, a daily tea — none of these feel significant alone, but together they add up to a large monthly expense
+
+Me:
+this is still too generic, can you mention the specific locations and explain that small purchases feel harmless individually but add up invisibly
+
+AI:
+Many young people who enjoy Xbox gaming, gym workouts, cinema at MCine Moka, and tea at Maison de Thé in Moka have no clear picture of where their money goes each month. Small recurring purchases feel harmless individually — $8.50 for a tea, $9.00 for a cinema ticket, $9.99 for a game DLC — but accumulate into hundreds of dollars of untracked spending. The Smart Finance Assistant solves this by automatically analysing CSV transaction data, providing personalised financial advice through an AI chatbot, retrieving evidence-based tips from a knowledge base, and calculating how long it takes to reach savings goals — all through a simple browser interface that requires no spreadsheet skills.
+
+Me:
+who is the target user for my smart finance assistant, they play xbox, go to the gym, watch movies at MCine Moka and drink tea at Maison de Thé in Moka
+
+AI: 
+Your target user is a young person aged roughly 18 to 28 who has regular income from work or allowance and enjoys a lifestyle centred around entertainment and fitness. They game on Xbox and make impulse purchases of DLC and in-game content. They go to the gym regularly and pay for personal training sessions. They watch movies at MCine Moka and visit Maison de Thé in Moka for tea several times a week. They have never tracked their spending systematically and are often surprised at the end of the month that their money is gone. They want quick insights without having to open a spreadsheet or do manual calculations.
+
+Me: 
+how is a personal finance assistant a business problem and not just a personal tool
+
+AI:
+Personal finance tools are a major category in fintech because financial unawareness has real economic consequences — people accumulate debt, miss savings goals, and make poor spending decisions not because they lack income but because they lack visibility. Apps like Mint, YNAB, and the Commonwealth Bank spending tracker all exist because this is a genuine market need
+
+Me:
+can you connect this to my specific app and explain the business value it creates for the user
+
+AI: 
+For your user, the Smart Finance Assistant creates measurable business value. Someone spending $216 per month on Xbox games, $170 on gym, $86 on cinema, and $99 on tea is spending $571 on discretionary items without realising it. The app converts that invisible spending into visible data, identifies which category to reduce first, and calculates exactly how many months it takes to save for a specific goal. This is the core value proposition of fintech — turning financial confusion into financial clarity. It is a real business problem because the user makes better financial decisions with the app than without it.
+
+Me: 
+list everything my smart finance assistant does in plain english, it has csv analysis, chatbot, rag, savings calculator, and gradio ui
+
+AI:
+Here is what your Smart Finance Assistant does in plain English:
+
+1. Spending Analysis — upload a bank CSV and instantly see a breakdown of spending by category with percentages and a visual bar chart
+2. AI Chat Advisor called FinBot — ask questions about your finances in natural language and get personalised advice that references your actual spending data
+3. Finance Tips using RAG — ask a question and get an answer retrieved specifically from a curated financial tips document, not general AI knowledge
+4. Savings Calculator — enter your monthly income, expenses, and a savings goal to find out exactly how many months it will take and how much to save each week
+5. Browser Interface using Gradio — access all four features through a simple four-tab web app with no coding required, shareable via a public link
+
+Me:
+what is the hands-on-ai python package and what can it do
+
+AI:
+hands-on-ai is a Python teaching package that wraps LLM API calls into simple functions designed for students learning AI-powered programming. It provides three main capabilities for your project. The chat module gives you get_response() which sends a message to the language model and returns the reply. The RAG module gives you get_answer() which retrieves an answer from a document you provide. The agent module lets you register Python functions as tools the LLM can call. All three connect to the Ollama server at ollama.serveur.au using your API key, so you do not need to manage API connections yourself.
+
+Me:
+show me the three imports i need for this project and what each one does
+
+AI:
+from hands_on_ai.chat import get_response
+reply = get_response("How much did I spend on Xbox?", system="You are FinBot...")
+
+from hands_on_ai.rag import get_answer
+answer = get_answer("How do I reduce gaming spend?", documents=[FINANCIAL_TIPS])
+
+from hands_on_ai import agent
+agent.register_tool('savings_calculator', savings_calculator)
+
+The first handles the chat tab, the second handles the RAG tips tab, and the third registers your savings calculator so the LLM can call it as an agent tool.
