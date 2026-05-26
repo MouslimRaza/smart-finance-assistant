@@ -1,0 +1,223 @@
+Me:
+what is pseudocode and why do we write it before coding
+
+AI:
+Pseudocode is a way of planning your code in plain English before you actually write it in Python. It shows the logic and structure without worrying about syntax.
+
+Bad pseudocode — too vague:
+  load the file
+  clean it
+  return data
+
+Good pseudocode — right level of detail:
+  FUNCTION load_and_clean(file):
+    TRY to read file as CSV
+    IF columns are missing: RAISE error
+    REMOVE $ from Amount using regex
+    CONVERT to float (invalid → NaN)
+    DROP NaN rows
+    RETURN clean DataFrame
+
+Writing pseudocode first forces you to think through the logic before dealing with Python syntax. It also makes bugs easier to spot — if the logic is wrong in pseudocode it will be wrong in code too.
+
+Me:
+write pseudocode for my load_and_clean function, handle three input types, validate four columns, clean dollar signs, drop bad rows
+
+AI:
+FUNCTION load_and_clean(file_or_string):
+
+  TRY:
+    IF file_or_string has .name attribute: READ CSV from file_or_string.name
+    ELSE IF file_or_string is string with newlines: READ CSV from string
+    ELSE: READ CSV from file path
+  CATCH: RAISE ValueError with message
+
+  CHECK columns Date Amount Category Description exist
+  IF missing: RAISE ValueError with column list
+
+  REMOVE $ comma space from Amount using regex
+  CONVERT to float with errors becoming NaN
+  DROP rows where Amount_Clean is NaN
+  FILL missing Category with Uncategorised
+  FILL missing Description with empty string
+
+  RETURN clean DataFrame
+
+Me:
+write pseudocode for analyse_spending_patterns, separate refunds before grouping, use positive total for percentages, return a dict with summary total refunds net avg n and top
+
+AI:
+FUNCTION analyse_spending(df):
+  SPLIT df into positive and refunds
+  total = SUM of all Amount_Clean
+  GROUP by Category
+  ADD percentage column
+  SORT descending
+  RETURN dict
+
+Me:
+the function must be called analyse_spending_patterns not analyse_spending, and you forgot the top key in the return dict, top is the name of the highest spending category used by the recommendations function
+
+AI:
+FUNCTION analyse_spending_patterns(df):
+
+  SET positive to rows where Amount_Clean > 0
+  SET refunds  to rows where Amount_Clean < 0
+
+  SET total_spent   = SUM of positive Amount_Clean
+  SET total_refunds = ABSOLUTE VALUE of SUM of refund Amount_Clean
+  SET net_spent     = total_spent - total_refunds
+
+  GROUP positive by Category:
+    Total_Spent     = SUM
+    Avg_Transaction = MEAN
+    Count           = COUNT
+  ROUND to 2 decimal places
+  RESET index so Category is a regular column
+
+  ADD Percentage = Total_Spent / total_spent * 100
+  SORT by Total_Spent DESCENDING
+
+  RETURN {
+    summary:  sorted DataFrame,
+    total:    total_spent,
+    refunds:  total_refunds,
+    net:      net_spent,
+    avg:      mean of positive amounts,
+    n:        count of positive rows,
+    top:      name of first Category in sorted summary
+  }
+
+Me:
+write pseudocode for generate_financial_recommendations with triggers Gaming over 50, Gym over 80, Cinema over 40, Tea over 30, must return a string
+
+AI:
+FUNCTION generate_recommendations(analysis):
+  tips = empty list
+
+Me:
+the function name must be generate_financial_recommendations, and the tip text must reference specific locations: Xbox for gaming, MCine for cinema, Maison de Thé for tea, and 48 hour wishlist rule for gaming impulse buys
+
+AI:
+FUNCTION generate_financial_recommendations(analysis_data):
+
+  tips = empty list
+
+  FOR each row in summary DataFrame:
+    SET cat   to row Category
+    SET spent to row Total_Spent
+
+    IF cat equals Gaming AND spent > 50:
+      SET saving to spent times 0.4
+      ADD "Gaming: $spent on Xbox. 48-hour wishlist rule saves ~$saving/month"
+
+    IF cat equals Gym AND spent > 80:
+      ADD "Gym: $spent. Off-peak membership or block PT sessions save 10-20%"
+
+    IF cat equals Cinema AND spent > 40:
+      ADD "Cinema (MCine): $spent. Tue/Wed saves $2-3. Loyalty card helps."
+
+    IF cat equals Tea and Café AND spent > 30:
+      SET brew_save to spent times 0.85
+      ADD "Tea (Maison de Thé): $spent. Home brewing saves ~$brew_save/month."
+
+  IF tips is empty:
+    ADD "Spending looks balanced! Keep tracking."
+
+  ADD "Biggest spend: top — focus here first."
+
+  RETURN all tips joined with newline
+
+Me:
+write pseudocode for create_savings_calculator_tool, income expenses goal inputs, all validation, years months split, weekly daily breakdown
+
+AI:
+FUNCTION create_savings_calculator_tool(income, expenses, goal):
+
+  CONVERT all to float
+  IF income <= 0: RETURN income error message
+  IF expenses < 0: RETURN expenses error message
+  IF goal <= 0: RETURN goal error message
+
+  SET monthly to income minus expenses
+  IF monthly <= 0:
+    SET shortfall to absolute value of monthly
+    RETURN shortfall error message
+
+  SET months_total to goal divided by monthly
+  SET years       to FLOOR of months_total divided by 12
+  SET months_rem  to FLOOR of months_total modulo 12 plus 1
+  SET weekly      to monthly divided by 4.33
+  SET daily       to monthly divided by 30
+  SET rate        to monthly divided by income times 100
+
+  BUILD formatted report as list of lines
+  RETURN lines joined with newline
+
+Me:
+write pseudocode for chat_finbot using get_response, optional spending context, must not crash when server unavailable
+
+AI:
+FUNCTION chat_finbot(user_msg, spending_ctx empty string):
+
+  SET system to SYSTEM_PROMPT
+  IF spending_ctx not empty:
+    APPEND newline + spending context to system
+
+  TRY:
+    SET reply to get_response(user_msg, system=system)
+    IF reply is empty: SET reply to fallback message
+
+  CATCH any Exception as e:
+    SET reply to error message listing possible causes:
+      Internet issue, API key invalid, server unavailable
+      Technical error detail: e
+
+  ADD (user_msg, reply) to chat_history
+  RETURN reply
+
+Me:
+write pseudocode for rag_lookup, passes FINANCIAL_TIPS in system prompt and uses get_response
+
+AI:
+FUNCTION rag_lookup(question):
+
+  BUILD system_prompt containing:
+    Instruction to answer ONLY from document
+    Instruction to say not found if answer not in document
+    The full FINANCIAL_TIPS document as f-string
+
+  TRY:
+    SET answer to get_response(question, system=system_prompt)
+    IF answer is empty: SET answer to fallback message
+    RETURN answer
+
+  CATCH any Exception as e:
+    RETURN error message with technical details
+
+Me:
+write pseudocode for the gradio ui with four tabs, enter key for chat, and sample data fallback for analysis
+
+AI:
+CREATE Blocks app with title and Soft theme
+
+TAB Spending Analysis:
+  FILE upload, BUTTON, TEXTBOX output
+  WIRE button to ui_analyse(file)
+  IF no file: use SAMPLE_CSV with explanatory note
+
+TAB Chat Advisor:
+  OPTIONAL file upload
+  CHATBOT display, TEXTBOX input, BUTTON
+  WIRE button click AND textbox submit to ui_chat(msg, history, file)
+
+TAB Finance Tips RAG:
+  TEXTBOX input, BUTTON, TEXTBOX output
+  WIRE button to ui_rag(question)
+
+TAB Savings Calculator:
+  THREE NUMBER inputs income expenses goal with default values
+  BUTTON, TEXTBOX output
+  WIRE button to ui_savings(income, expenses, goal)
+
+LAUNCH with share=True for public Colab link
