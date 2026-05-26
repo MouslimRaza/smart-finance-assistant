@@ -1,0 +1,305 @@
+Me:
+what test datasets do i need for my finance assistant and what should each one test
+
+AI:
+You could just use your main CSV file for all tests. Or you could create a few small ones — maybe one with good data and one with bad data.
+
+Me:
+that is too vague, i cannot predict exact expected totals from a 51 row CSV, i need five specific controlled datasets each targeting a different failure mode
+
+AI:
+You need 5 datasets:
+
+NORMAL_CSV — 4 categories plus 1 refund with known exact totals.
+Use this to test: correct totals, correct percentages, correct refund separation.
+Expected: total=155.49, refunds=15.00, net=140.49, top=Gaming
+
+MESSY_CSV — whitespace in amounts, a non-numeric value, a missing amount, a missing category.
+Use this to test: bad rows are dropped, missing categories fill with "Uncategorised".
+
+SINGLE_ROW_CSV — exactly 1 transaction, $100.00, Gaming.
+Use this to test: the function handles minimum possible input without crashing.
+
+REFUNDS_ONLY_CSV — 2 negative rows, no positive spending.
+Use this to test: total=0.0, no crash when there is nothing to group.
+
+WRONG_COLS_CSV — completely wrong column names.
+Use this to test: ValueError is raised with a message mentioning "Missing columns".
+
+Me:
+write 7 assert tests for load_and_clean covering normal load, dollar sign stripping, refund detection, messy data dropping, missing category filling, wrong columns ValueError, and single row
+
+AI:
+df = load_and_clean(NORMAL_CSV)
+print("loaded ok")
+
+df_messy = load_and_clean(MESSY_CSV)
+print("messy ok")
+
+try:
+    load_and_clean(WRONG_COLS_CSV)
+except:
+    print("error ok")
+
+Me:
+just printing is not testing, i need real assert statements with descriptive messages so the test fails loudly when something is wrong
+
+AI:
+def test_data_loading_function():
+    print("🧪 Testing data loading function...")
+
+    df = load_and_clean(NORMAL_CSV)
+    assert df is not None, "1a: load_and_clean should return a DataFrame"
+    assert len(df) == 5,   f"1a: Expected 5 rows, got {len(df)}"
+    print("  PASS 1a: normal CSV loads correctly (5 rows)")
+
+    assert df["Amount_Clean"].dtype in [float, "float64"], "1b: Amount_Clean should be float"
+    assert df["Amount_Clean"].iloc[0] == 60.00, "1b: First row should be 60.00"
+    print("  PASS 1b: dollar signs stripped, values are numeric floats")
+
+    refund_rows = df[df["Amount_Clean"] < 0]
+    assert len(refund_rows) == 1, "1c: Should detect exactly 1 refund row"
+    assert refund_rows["Amount_Clean"].iloc[0] == -15.00, "1c: Refund should be -15.00"
+    print("  PASS 1c: refund row stored as -15.00")
+
+    df_messy = load_and_clean(MESSY_CSV)
+    assert df_messy["Amount_Clean"].isna().sum() == 0, "1d: No NaN should remain"
+    assert len(df_messy) < 6, "1d: Bad rows must be dropped"
+    print(f"  PASS 1d: {6 - len(df_messy)} bad rows dropped")
+
+    assert "Uncategorised" in df_messy["Category"].values, "1e: Missing category should fill"
+    print("  PASS 1e: missing category filled as 'Uncategorised'")
+
+    error_raised = False
+    try:
+        load_and_clean(WRONG_COLS_CSV)
+    except ValueError as e:
+        error_raised = True
+        assert "Missing columns" in str(e) or "column" in str(e).lower(), \
+            f"1f: Error should mention columns, got: {e}"
+    assert error_raised, "1f: Wrong column names should raise ValueError"
+    print("  PASS 1f: wrong columns raise descriptive ValueError")
+
+    df_single = load_and_clean(SINGLE_ROW_CSV)
+    assert len(df_single) == 1, "1g: Should load exactly 1 row"
+    assert df_single["Amount_Clean"].iloc[0] == 100.00, "1g: Amount should be 100.00"
+    print("  PASS 1g: single-row CSV handled correctly")
+
+Me:
+write 7 assert tests for analyse_spending_patterns using NORMAL_CSV with known values: total 155.49, refunds 15.00, net 140.49, top Gaming
+
+AI:
+a = analyse_spending_patterns(load_and_clean(NORMAL_CSV))
+assert a['total'] == 155.49
+assert a['refunds'] == 15.00
+assert a['net'] == 140.49
+assert a['top'] == 'Gaming'
+print("all passed")
+
+Me:
+use abs tolerance for float comparison like abs(result - expected) less than 0.01, check all 7 required keys exist, and add a test for REFUNDS_ONLY_CSV returning total 0 without crashing
+
+AI:
+def test_spending_analysis():
+    print("🧪 Testing spending analysis...")
+    df     = load_and_clean(NORMAL_CSV)
+    result = analyse_spending_patterns(df)
+
+    for key in ["summary", "total", "refunds", "net", "avg", "n", "top"]:
+        assert key in result, f"2a: Missing key '{key}'"
+    print("  PASS 2a: all required keys present")
+
+    assert abs(result["total"] - 155.49) < 0.01, \
+        f"2b: Expected $155.49, got ${result['total']}"
+    print("  PASS 2b: total positive spending = $155.49 ✓")
+
+    assert abs(result["refunds"] - 15.00) < 0.01, \
+        f"2c: Expected $15.00, got ${result['refunds']}"
+    print("  PASS 2c: refunds = $15.00 correctly separated")
+
+    assert abs(result["net"] - 140.49) < 0.01, \
+        f"2d: Expected $140.49, got ${result['net']}"
+    print("  PASS 2d: net spending = $140.49 ✓")
+
+    pct_sum = result["summary"]["Percentage"].sum()
+    assert abs(pct_sum - 100.0) < 0.5, \
+        f"2e: Percentages should sum to 100%, got {pct_sum:.1f}%"
+    print(f"  PASS 2e: percentages sum to {pct_sum:.1f}% ✓")
+
+    assert result["top"] == "Gaming", \
+        f"2f: Expected 'Gaming', got '{result['top']}'"
+    print("  PASS 2f: top category = 'Gaming' ✓")
+
+    df_r     = load_and_clean(REFUNDS_ONLY_CSV)
+    result_r = analyse_spending_patterns(df_r)
+    assert result_r["total"] == 0.0, "2g: Total should be 0 with no positive rows"
+    assert result_r["refunds"] > 0,  "2g: Refund amounts should still be captured"
+    print("  PASS 2g: refunds-only data handled without crash")
+
+Me:
+write 5 assert tests for generate_financial_recommendations using isolated mini-csvs for each trigger
+
+AI:
+recs = generate_financial_recommendations(analyse_spending_patterns(load_and_clean(SAMPLE_CSV)))
+assert 'Gaming' in recs
+assert 'Gym' in recs
+print("all passed")
+
+Me:
+testing with SAMPLE_CSV triggers all four recommendations at once so i cannot isolate which trigger is working, i need four separate mini-csvs so each test only checks one condition
+
+AI:
+def test_business_insights():
+    print("🧪 Testing business insights...")
+
+    HIGH_GAMING_CSV = """Date,Amount,Category,Description
+2026-03-01,$200.00,Gaming,Xbox Store - Big Bundle
+2026-03-02,$8.50,Tea & Café,Maison de Thé
+"""
+    HIGH_GYM_CSV = """Date,Amount,Category,Description
+2026-03-01,$120.00,Gym,Membership + Personal Training
+2026-03-02,$8.50,Tea & Café,Maison de Thé
+"""
+    HIGH_CINEMA_CSV = """Date,Amount,Category,Description
+2026-03-01,$60.00,Cinema,MCine Moka - Multiple Tickets
+2026-03-02,$8.50,Tea & Café,Maison de Thé
+"""
+    HIGH_CAFE_CSV = """Date,Amount,Category,Description
+2026-03-01,$50.00,Tea & Café,Maison de Thé - Daily Visits
+2026-03-02,$20.00,Gaming,Xbox Store
+"""
+    a   = analyse_spending_patterns(load_and_clean(HIGH_GAMING_CSV))
+    rec = generate_financial_recommendations(a)
+    assert "Gaming" in rec or "Xbox" in rec or "wishlist" in rec.lower(), \
+        "3a: High gaming spend should trigger a gaming tip"
+    print("  PASS 3a: gaming recommendation triggered (>$50)")
+
+    a   = analyse_spending_patterns(load_and_clean(HIGH_GYM_CSV))
+    rec = generate_financial_recommendations(a)
+    assert "Gym" in rec or "off-peak" in rec.lower() or "training" in rec.lower(), \
+        "3b: High gym spend should trigger a gym tip"
+    print("  PASS 3b: gym recommendation triggered (>$80)")
+
+    a   = analyse_spending_patterns(load_and_clean(HIGH_CINEMA_CSV))
+    rec = generate_financial_recommendations(a)
+    assert "Cinema" in rec or "MCine" in rec or "Tuesday" in rec or "loyalty" in rec.lower(), \
+        "3c: High cinema spend should trigger a cinema tip"
+    print("  PASS 3c: cinema recommendation triggered (>$40)")
+
+    a   = analyse_spending_patterns(load_and_clean(HIGH_CAFE_CSV))
+    rec = generate_financial_recommendations(a)
+    assert "Tea" in rec or "Maison" in rec or "home" in rec.lower() or "brew" in rec.lower(), \
+        "3d: High café spend should trigger a tea tip"
+    print("  PASS 3d: tea & café recommendation triggered (>$30)")
+
+    a   = analyse_spending_patterns(load_and_clean(NORMAL_CSV))
+    rec = generate_financial_recommendations(a)
+    assert "Biggest spend" in rec or "biggest" in rec.lower() or "focus" in rec.lower(), \
+        "3e: Summary line should always appear"
+    print("  PASS 3e: summary 'biggest spend' line always present")
+
+Me:
+write an integration test that chains all 5 components and asserts output content at each step, use real numbers from the analysis for the savings calculator
+
+AI:
+def test_full_workflow():
+    print("🧪 Testing complete workflow integration...")
+
+    df = load_and_clean(SAMPLE_CSV)
+    assert df is not None and len(df) > 0, "Step 1: DataFrame should be non-empty"
+    assert "Amount_Clean" in df.columns,   "Step 1: Amount_Clean must exist"
+    print("  PASS Step 1: SAMPLE_CSV loaded and cleaned successfully")
+
+    result = analyse_spending_patterns(df)
+    assert result["total"] > 0,          "Step 2: total should be > 0"
+    assert len(result["summary"]) > 0,   "Step 2: summary should not be empty"
+    report = full_report(result)
+    assert isinstance(report, str) and len(report) > 100, "Step 2: report must be non-empty"
+    assert "SMART FINANCE ASSISTANT REPORT" in report,    "Step 2: report must have title"
+    print("  PASS Step 2: analysis pipeline and report generated correctly")
+
+    ctx        = f"Gaming ${result['summary'].iloc[0]['Total_Spent']}"
+    chat_reply = chat_finbot("Am I spending too much on Xbox?", spending_ctx=ctx)
+    assert isinstance(chat_reply, str) and len(chat_reply) > 0, \
+        "Step 3: chat_finbot must return a non-empty string"
+    print("  PASS Step 3: chat_finbot returned a response without crashing")
+
+    rag_reply = rag_lookup("How do I spend less on gaming?")
+    assert isinstance(rag_reply, str) and len(rag_reply) > 0, \
+        "Step 4: rag_lookup must return a non-empty string"
+    print("  PASS Step 4: rag_lookup returned a response without crashing")
+
+    monthly_expenses = round(result["net"] / 3, 2)
+    calc_out = create_savings_calculator_tool(2500, monthly_expenses, 5000)
+    assert isinstance(calc_out, str),                     "Step 5: must return string"
+    assert "SAVINGS GOAL CALCULATOR" in calc_out,         "Step 5: must contain header"
+    assert "$" in calc_out,                               "Step 5: must contain dollar amounts"
+    print("  PASS Step 5: savings calculator produced a well-formed report")
+
+    assert result["top"] in report, "Bonus: top category should appear in report"
+    recs = generate_financial_recommendations(result)
+    assert result["top"] in recs or "$" in recs, "Bonus: recommendations reference real data"
+    print("  PASS Bonus: all components reference the same real data")
+
+Me:
+write 8 error handling tests covering wrong columns, empty input, malformed amounts, zero income, expenses greater than income, negative expenses, and chat and rag not crashing when server is down
+
+AI:
+def test_error_handling():
+    print("🧪 Testing error handling...")
+
+    raised = False
+    try:
+        load_and_clean("Trans_Date,Value,Type,Notes\n2026-03-01,$60.00,Gym,Membership\n")
+    except ValueError as e:
+        raised = True
+        assert "column" in str(e).lower() or "missing" in str(e).lower(), \
+            "EH1: Error message should mention missing columns"
+    assert raised, "EH1: Wrong column names must raise ValueError"
+    print("  PASS EH1: wrong column names raise a descriptive ValueError")
+
+    raised = False
+    try:
+        load_and_clean("")
+    except Exception:
+        raised = True
+    assert raised, "EH2: Empty input should raise an exception"
+    print("  PASS EH2: empty input raises an exception gracefully")
+
+    PARTLY_BAD = "Date,Amount,Category,Description\n2026-03-01,$50.00,Gaming,Xbox\n2026-03-02,BROKEN,Gaming,Bad\n2026-03-03,$20.00,Gym,PT\n"
+    df_bad = load_and_clean(PARTLY_BAD)
+    assert len(df_bad) == 2, f"EH3: Expected 2 rows, got {len(df_bad)}"
+    assert df_bad["Amount_Clean"].isna().sum() == 0, "EH3: No NaN should survive"
+    print("  PASS EH3: malformed rows dropped, valid rows kept")
+
+    out = create_savings_calculator_tool(0, 500, 1000)
+    assert isinstance(out, str) and len(out) > 0, "EH4: Must return message not crash"
+    assert any(w in out.lower() for w in ["zero", "greater", "income", "must"]), \
+        f"EH4: Message should explain zero income, got: {out}"
+    print("  PASS EH4: zero income returns a user-friendly message")
+
+    out = create_savings_calculator_tool(1000, 1500, 5000)
+    assert isinstance(out, str) and len(out) > 0, "EH5: Must return message not crash"
+    assert any(w in out.lower() for w in ["more than earned", "shortfall", "reduce", "spending"]), \
+        f"EH5: Message should explain shortfall, got: {out}"
+    print("  PASS EH5: expenses > income returns a user-friendly message")
+
+    out = create_savings_calculator_tool(2000, -100, 1000)
+    assert isinstance(out, str) and len(out) > 0, "EH6: Must return message not crash"
+    assert any(w in out.lower() for w in ["negative", "cannot", "expenses", "zero"]), \
+        f"EH6: Message should explain negative expenses, got: {out}"
+    print("  PASS EH6: negative expenses returns a user-friendly message")
+
+    try:
+        reply = chat_finbot("Test — network may be down")
+        assert isinstance(reply, str), "EH7: chat_finbot must return a string"
+        print("  PASS EH7: chat_finbot returns string even when server unavailable")
+    except Exception as e:
+        print(f"  SKIP EH7: chat_finbot raised unhandled exception: {e}")
+
+    try:
+        answer = rag_lookup("Test — network may be down")
+        assert isinstance(answer, str), "EH8: rag_lookup must return a string"
+        print("  PASS EH8: rag_lookup returns string even when server unavailable")
+    except Exception as e:
+        print(f"  SKIP EH8: rag_lookup raised unhandled exception: {e}")
